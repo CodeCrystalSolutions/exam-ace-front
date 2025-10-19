@@ -7,6 +7,7 @@ import {
   Building2,
   UserCircle,
   LogOut,
+  Award,
 } from "lucide-react";
 import {
   Sidebar,
@@ -30,8 +31,11 @@ export const AppSidebar = () => {
     ...(user?.role === "admin" || user?.role === "root_admin"
       ? [{ title: "Users", url: "/dashboard/users", icon: Users }]
       : []),
-    ...(user?.role === "admin" || user?.role === "teacher"
+    ...(user?.role === "admin" || user?.role === "teacher" || user?.role === "student"
       ? [{ title: "Exams", url: "/dashboard/exams", icon: BookOpen }]
+      : []),
+    ...(user?.role === "student"
+      ? [{ title: "My Results", url: "/dashboard/results", icon: Award }]
       : []),
     ...(user?.role === "root_admin"
       ? [{ title: "Tenants", url: "/dashboard/tenants", icon: Building2 }]

@@ -7,6 +7,7 @@ export interface Exam {
   duration_minutes: number;
   passing_score: number;
   active: boolean;
+  status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
   tenant_id: string;
   created_by: string;
   created_at: string;

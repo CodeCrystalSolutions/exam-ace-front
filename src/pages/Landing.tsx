@@ -12,7 +12,8 @@ import {
   ArrowRight,
   Sparkles,
   Target,
-  Award
+  Award,
+  Key
 } from "lucide-react";
 import heroImage from "@/assets/hero-exam-system.jpg";
 
@@ -69,6 +70,9 @@ export default function Landing() {
             <span className="text-xl font-bold">ExamSystem</span>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="outline" asChild>
+              <a href="#credentials">Test Credentials</a>
+            </Button>
             <Link to="/login">
               <Button variant="ghost">Login</Button>
             </Link>
@@ -280,6 +284,80 @@ export default function Landing() {
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      {/* Test Credentials Section */}
+      <section id="credentials" className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4">
+              <Key className="mr-2 h-3 w-3" />
+              Test Credentials
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">Ready to Test?</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Use these credentials to explore different role-based dashboards and features
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {[
+              {
+                role: "Root Admin",
+                email: "rootadmin@test.com",
+                password: "rootadmin123",
+                color: "bg-red-500/10 border-red-500/20",
+                access: "Full system access, tenant management"
+              },
+              {
+                role: "Admin",
+                email: "admin@test.com",
+                password: "admin123",
+                color: "bg-blue-500/10 border-blue-500/20",
+                access: "User management, exam creation"
+              },
+              {
+                role: "Teacher",
+                email: "teacher@test.com",
+                password: "teacher123",
+                color: "bg-green-500/10 border-green-500/20",
+                access: "Create exams, evaluate students"
+              },
+              {
+                role: "Student",
+                email: "student@test.com",
+                password: "student123",
+                color: "bg-purple-500/10 border-purple-500/20",
+                access: "Take exams, view results"
+              }
+            ].map((cred) => (
+              <Card key={cred.role} className={`${cred.color} border-2`}>
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-3">
+                    <Badge variant="default" className="mb-2">{cred.role}</Badge>
+                    <div className="space-y-1">
+                      <p className="text-sm font-mono bg-background/50 p-2 rounded">
+                        {cred.email}
+                      </p>
+                      <p className="text-sm font-mono bg-background/50 p-2 rounded">
+                        {cred.password}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-2">
+                      {cred.access}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Button size="lg" asChild>
+              <Link to="/login">Login to Test</Link>
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}

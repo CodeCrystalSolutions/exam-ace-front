@@ -12,6 +12,9 @@ import Signup from "./pages/Auth/Signup";
 import Dashboard from "./pages/Dashboard/Index";
 import Users from "./pages/Dashboard/Users";
 import Exams from "./pages/Dashboard/Exams";
+import ExamDetail from "./pages/Dashboard/ExamDetail";
+import TakeExam from "./pages/Dashboard/TakeExam";
+import Results from "./pages/Dashboard/Results";
 import Profile from "./pages/Dashboard/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -48,8 +51,32 @@ const App = () => (
               <Route
                 path="exams"
                 element={
-                  <ProtectedRoute allowedRoles={["admin", "teacher", "root_admin"]}>
+                  <ProtectedRoute allowedRoles={["admin", "teacher", "student"]}>
                     <Exams />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="exams/:id"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "teacher"]}>
+                    <ExamDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="exams/:id/take"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <TakeExam />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="results"
+                element={
+                  <ProtectedRoute allowedRoles={["student"]}>
+                    <Results />
                   </ProtectedRoute>
                 }
               />

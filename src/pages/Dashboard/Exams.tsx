@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { examsApi, Exam, CreateExamRequest, UpdateExamRequest } from "@/api/exams";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,14 +12,19 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Search, Clock, Target } from "lucide-react";
+import { Plus, Pencil, Search, Clock, Target, Eye, Play } from "lucide-react";
 
 export default function Exams() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+
+  const canManage = user?.role === "admin" || user?.role === "teacher";
+  const isStudent = user?.role === "student";
 
   const { data: exams, isLoading } = useQuery({
     queryKey: ["exams"],
@@ -83,10 +90,13 @@ export default function Exams() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Exams</h1>
-          <p className="text-muted-foreground mt-2">Create and manage exams</p>
+          <h1 className="text-3xl font-bold">{isStudent ? "Available Exams" : "Exams"}</h1>
+          <p className="text-muted-foreground mt-2">
+            {isStudent ? "Take exams and view your attempts" : "Create and manage exams"}
+          </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        {canManage && (
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -166,7 +176,8 @@ export default function Exams() {
                   <TableHead>Duration</TableHead>
                   <TableHead>Passing Score</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {!isStudent && <TableHead className="text-right">Actions</TableHead>}
+                  {isStudent && <TableHead className="text-right">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,20 +207,42 @@ export default function Exams() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={exam.active ? "default" : "secondary"}>
-                        {exam.active ? "Active" : "Inactive"}
+                        {exam.status || (exam.active ? "PUBLISHED" : "DRAFT")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedExam(exam);
-                          setIsEditOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                    <TableCell className="text-right space-x-2">
+                      {isStudent ? (
+                        (exam.active || exam.status === "PUBLISHED") && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/dashboard/exams/${exam.id}/take`)}
+                          >
+                            <Play className="mr-2 h-4 w-4" />
+                            Start Exam
+                          </Button>
+                        )
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(`/dashboard/exams/${exam.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedExam(exam);
+                              setIsEditOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
