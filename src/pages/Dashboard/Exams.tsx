@@ -97,58 +97,59 @@ export default function Exams() {
         </div>
         {canManage && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Exam
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <form onSubmit={handleCreate}>
-              <DialogHeader>
-                <DialogTitle>Create New Exam</DialogTitle>
-                <DialogDescription>Add a new exam to your organization</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create-title">Title</Label>
-                  <Input id="create-title" name="title" required />
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Exam
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form onSubmit={handleCreate}>
+                <DialogHeader>
+                  <DialogTitle>Create New Exam</DialogTitle>
+                  <DialogDescription>Add a new exam to your organization</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="create-title">Title</Label>
+                    <Input id="create-title" name="title" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-description">Description</Label>
+                    <Textarea id="create-description" name="description" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-duration">Duration (minutes)</Label>
+                    <Input
+                      id="create-duration"
+                      name="duration_minutes"
+                      type="number"
+                      min="1"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-passing">Passing Score (%)</Label>
+                    <Input
+                      id="create-passing"
+                      name="passing_score"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-description">Description</Label>
-                  <Textarea id="create-description" name="description" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-duration">Duration (minutes)</Label>
-                  <Input
-                    id="create-duration"
-                    name="duration_minutes"
-                    type="number"
-                    min="1"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-passing">Passing Score (%)</Label>
-                  <Input
-                    id="create-passing"
-                    name="passing_score"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    required
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Creating..." : "Create Exam"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <DialogFooter>
+                  <Button type="submit" disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Creating..." : "Create Exam"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Card>
