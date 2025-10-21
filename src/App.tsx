@@ -11,6 +11,7 @@ import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import Dashboard from "./pages/Dashboard/Index";
 import Users from "./pages/Dashboard/Users";
+import Tenants from "./pages/Dashboard/Tenants";
 import Exams from "./pages/Dashboard/Exams";
 import ExamDetail from "./pages/Dashboard/ExamDetail";
 import TakeExam from "./pages/Dashboard/TakeExam";
@@ -40,6 +41,14 @@ const App = () => (
               }
             >
               <Route index element={<Dashboard />} />
+              <Route
+                path="tenants"
+                element={
+                  <ProtectedRoute allowedRoles={["root_admin"]}>
+                    <Tenants />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="users"
                 element={

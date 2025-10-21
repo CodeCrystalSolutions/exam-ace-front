@@ -103,18 +103,68 @@ if (ENABLE_MOCKS) {
   });
 
   // TENANTS ----------------------------------------------------
-  mock.onGet("/api/tenants/me").reply(200, {
-    id: tenant.id,
-    name: tenant.name,
-    slug: tenant.slug,
-    plan: tenant.plan,
-    active: tenant.active,
-    created_at: tenant.created_at,
+  const tenants = [tenant];
+
+  mock.onGet("/api/tenants/me").reply(() => {
+    const user = getCurrentUser();
+    if (!user) return [401, { detail: "Unauthorized" }];
+    const userTenant = tenants.find((t) => t.id === user.tenant_id);
+    return [200, userTenant || tenant];
   });
 
-  mock.onGet("/api/tenants").reply(200, [
-    { id: tenant.id, name: tenant.name, slug: tenant.slug, plan: tenant.plan, active: tenant.active, created_at: tenant.created_at },
-  ]);
+  mock.onGet("/api/tenants").reply(() => {
+    const user = getCurrentUser();
+    if (!user || user.role !== "root_admin") return [403, { detail: "Forbidden" }];
+    return [200, tenants];
+  });
+
+  mock.onPost("/api/tenants").reply((config) => {
+    try {
+      const user = getCurrentUser();
+      if (!user || user.role !== "root_admin") return [403, { detail: "Forbidden" }];
+      const { name, slug, active } = JSON.parse(config.data || "{}");
+      if (!name || !slug) return [400, { detail: "Missing fields" }];
+      if (tenants.some((t) => t.slug === slug)) return [400, { detail: "Slug already exists" }];
+      const id = `t${tenants.length + 1}`;
+      const newTenant = {
+        id,
+        name,
+        slug,
+        plan: "basic",
+        active: active !== undefined ? active : true,
+        created_at: new Date().toISOString(),
+      };
+      tenants.push(newTenant);
+      return [200, newTenant];
+    } catch {
+      return [500, { detail: "Create tenant failed" }];
+    }
+  });
+
+  mock.onPut(/\/api\/tenants\/[^/]+$/).reply((config) => {
+    try {
+      const user = getCurrentUser();
+      if (!user || user.role !== "root_admin") return [403, { detail: "Forbidden" }];
+      const id = config.url!.split("/").pop()!;
+      const patch = JSON.parse(config.data || "{}");
+      const idx = tenants.findIndex((t) => t.id === id);
+      if (idx === -1) return [404, { detail: "Not found" }];
+      tenants[idx] = { ...tenants[idx], ...patch };
+      return [200, tenants[idx]];
+    } catch {
+      return [500, { detail: "Update failed" }];
+    }
+  });
+
+  mock.onDelete(/\/api\/tenants\/[^/]+$/).reply((config) => {
+    const user = getCurrentUser();
+    if (!user || user.role !== "root_admin") return [403, { detail: "Forbidden" }];
+    const id = config.url!.split("/").pop()!;
+    const idx = tenants.findIndex((t) => t.id === id);
+    if (idx === -1) return [404, { detail: "Not found" }];
+    tenants.splice(idx, 1);
+    return [200, {}];
+  });
 
   // USERS ------------------------------------------------------
   mock.onGet("/api/users").reply(200, users.map(({ id, email, full_name, role, active, tenant_id, created_at }) => ({ id, email, full_name, role: (role as any) === "root_admin" ? "admin" : role, active, tenant_id, created_at })));
