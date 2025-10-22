@@ -4,72 +4,105 @@ Use these credentials to test different role-based access controls in the applic
 
 ## 🔐 Test Accounts
 
-### Root Admin
+### Root Admin (Platform Owner)
 - **Email:** `rootadmin@test.com`
-- **Password:** `rootadmin123`
-- **Access:** Full system access, tenant management, all administrative features
+- **Password:** `password123`
+- **Organization:** Acme Academy
+- **Access:** Full system access, manages all tenants and all users across the entire platform
 
-### Organization Admin
-- **Email:** `admin@test.com`
-- **Password:** `admin123`
-- **Tenant:** `test-org`
-- **Access:** User management, exam creation, all features within their organization
+### Organization Admin - Acme Academy
+- **Email:** `admin@acme.com`
+- **Password:** `password123`
+- **Organization:** Acme Academy
+- **Access:** Manages teachers and students within Acme Academy only
 
-### Teacher
-- **Email:** `teacher@test.com`
-- **Password:** `teacher123`
-- **Tenant:** `test-org`
-- **Access:** Create and manage exams, add questions, evaluate student submissions
+### Teacher - Acme Academy
+- **Email:** `teacher@acme.com`
+- **Password:** `password123`
+- **Organization:** Acme Academy
+- **Access:** Create and manage exams, evaluate student submissions within Acme Academy
 
-### Student
-- **Email:** `student@test.com`
-- **Password:** `student123`
-- **Tenant:** `test-org`
-- **Access:** Take exams, view results and feedback
+### Student - Acme Academy
+- **Email:** `student@acme.com`
+- **Password:** `password123`
+- **Organization:** Acme Academy
+- **Access:** Take exams and view results within Acme Academy
+
+### Organization Admin - Tech University
+- **Email:** `admin@tech.com`
+- **Password:** `password123`
+- **Organization:** Tech University
+- **Access:** Manages teachers and students within Tech University only
+
+### Teacher - Tech University
+- **Email:** `teacher@tech.com`
+- **Password:** `password123`
+- **Organization:** Tech University
+- **Access:** Create and manage exams, evaluate student submissions within Tech University
+
+### Student - Tech University
+- **Email:** `student@tech.com`
+- **Password:** `password123`
+- **Organization:** Tech University
+- **Access:** Take exams and view results within Tech University
 
 ---
 
 ## 📋 Role-Based Features
 
 ### Root Admin Can:
-- ✅ Manage all tenants across the system
-- ✅ View system-wide analytics
-- ✅ Access all organizations
+- ✅ Manage all tenants (organizations/schools) across the system
+- ✅ Create, edit, and delete tenants
+- ✅ View all users across all tenants
+- ✅ Create users with any role (including other root admins)
+- ✅ Full access to all features across all organizations
 
 ### Admin Can:
-- ✅ Manage users in their organization
-- ✅ Create and manage exams
-- ✅ View all results and analytics
-- ✅ Configure organization settings
+- ✅ View and manage teachers and students in their organization only
+- ✅ Create teachers and students within their organization
+- ✅ Manage exams within their organization
+- ✅ View results and analytics for their organization
+- ❌ Cannot see or manage users from other organizations
+- ❌ Cannot manage tenants
+- ❌ Cannot create root admin users
 
 ### Teacher Can:
-- ✅ Create and edit exams
+- ✅ Create and edit exams within their organization
 - ✅ Add/edit/delete questions
 - ✅ Evaluate student submissions
 - ✅ Publish results
 - ✅ View student performance
+- ❌ Cannot manage users
+- ❌ Cannot manage organization settings
 
 ### Student Can:
-- ✅ View available exams
+- ✅ View available exams in their organization
 - ✅ Start and complete exam attempts
 - ✅ Submit answers
 - ✅ View published results
 - ✅ Read feedback and evaluations
+- ❌ Cannot create or manage exams
+- ❌ Cannot view other students' results
 
 ---
 
 ## 🧪 Testing RBAC
 
-1. **Login with each account** to verify role-based dashboard views
-2. **Check navigation** - each role should see different menu items
-3. **Test permissions** - try accessing restricted routes for each role
-4. **Verify redirects** - roles should redirect to appropriate pages after login
+1. **Root Admin Testing:** Login as `rootadmin@test.com` to see all tenants and users across all organizations
+2. **Admin Testing:** Login as `admin@acme.com` or `admin@tech.com` to see only users in their respective organizations
+3. **Teacher Testing:** Login as `teacher@acme.com` or `teacher@tech.com` to manage exams within their organization
+4. **Student Testing:** Login as `student@acme.com` or `student@tech.com` to take exams within their organization
+5. **Check navigation** - each role should see different menu items based on their permissions
+6. **Test permissions** - try accessing restricted routes for each role (should redirect appropriately)
 
 ---
 
 ## 📝 Notes
 
-- All test accounts use the same tenant: `test-org`
-- Passwords are simple for testing purposes only
-- In production, enforce strong password policies
-- These credentials should be seeded in your backend database for testing
+- Two test organizations: **Acme Academy** and **Tech University**
+- Each organization has isolated data - admins can only manage users in their own organization
+- Root admin has access to everything across all organizations
+- All passwords are `password123` for testing purposes only
+- In production, enforce strong password policies and proper authentication
+- These credentials are seeded in the mock API (`src/api/mockServer.ts`)
+- When using real backend, ensure proper RLS policies enforce these access controls

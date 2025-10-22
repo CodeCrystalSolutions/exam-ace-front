@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi, User, CreateUserRequest, UpdateUserRequest } from "@/api/users";
+import { tenantsApi } from "@/api/tenants";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Building2 } from "lucide-react";
 
 export default function Users() {
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -23,6 +26,18 @@ export default function Users() {
     queryKey: ["users"],
     queryFn: usersApi.getAll,
   });
+
+  const { data: tenants } = useQuery({
+    queryKey: ["tenants"],
+    queryFn: tenantsApi.getAll,
+    enabled: currentUser?.role === "root_admin",
+  });
+
+  const isRootAdmin = currentUser?.role === "root_admin";
+
+  const getTenantName = (tenantId: string) => {
+    return tenants?.find(t => t.id === tenantId)?.name || tenantId;
+  };
 
   const createMutation = useMutation({
     mutationFn: usersApi.create,
@@ -102,7 +117,11 @@ export default function Users() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Users</h1>
-          <p className="text-muted-foreground mt-2">Manage user accounts</p>
+          <p className="text-muted-foreground mt-2">
+            {isRootAdmin 
+              ? "Manage all users across all tenants" 
+              : "Manage teachers and students in your organization"}
+          </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
@@ -137,6 +156,7 @@ export default function Users() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      {isRootAdmin && <SelectItem value="root_admin">Root Admin</SelectItem>}
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="teacher">Teacher</SelectItem>
                       <SelectItem value="student">Student</SelectItem>
@@ -157,7 +177,11 @@ export default function Users() {
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
-          <CardDescription>A list of all users in your organization</CardDescription>
+          <CardDescription>
+            {isRootAdmin 
+              ? "All users across all organizations" 
+              : "All users in your organization"}
+          </CardDescription>
           <div className="relative mt-4">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -178,6 +202,7 @@ export default function Users() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  {isRootAdmin && <TableHead>Organization</TableHead>}
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -189,9 +214,17 @@ export default function Users() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="capitalize">
-                        {user.role}
+                        {user.role.replace("_", " ")}
                       </Badge>
                     </TableCell>
+                    {isRootAdmin && (
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{getTenantName(user.tenant_id)}</span>
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Badge variant={user.active ? "default" : "destructive"}>
                         {user.active ? "Active" : "Inactive"}
@@ -258,6 +291,7 @@ export default function Users() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    {isRootAdmin && <SelectItem value="root_admin">Root Admin</SelectItem>}
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="teacher">Teacher</SelectItem>
                     <SelectItem value="student">Student</SelectItem>

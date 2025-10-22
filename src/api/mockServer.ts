@@ -13,20 +13,30 @@ if (ENABLE_MOCKS) {
 
   type Role = "root_admin" | "admin" | "teacher" | "student";
 
-  const tenant = { id: "t1", name: "Acme Academy", slug: "acme", plan: "pro", active: true, created_at: new Date().toISOString() };
+  // Multiple tenants for testing
+  const tenants = [
+    { id: "t1", name: "Acme Academy", slug: "acme", active: true, created_at: new Date().toISOString() },
+    { id: "t2", name: "Tech University", slug: "tech-uni", active: true, created_at: new Date().toISOString() },
+  ];
 
   const passwordByEmail: Record<string, string> = {
     "rootadmin@test.com": "password123",
-    "admin@test.com": "password123",
-    "teacher@test.com": "password123",
-    "student@test.com": "password123",
+    "admin@acme.com": "password123",
+    "teacher@acme.com": "password123",
+    "student@acme.com": "password123",
+    "admin@tech.com": "password123",
+    "teacher@tech.com": "password123",
+    "student@tech.com": "password123",
   };
 
   const users = [
-    { id: "u1", email: "rootadmin@test.com", full_name: "Root Admin", role: "root_admin" as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() },
-    { id: "u2", email: "admin@test.com", full_name: "Org Admin", role: "admin" as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() },
-    { id: "u3", email: "teacher@test.com", full_name: "Teacher User", role: "teacher" as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() },
-    { id: "u4", email: "student@test.com", full_name: "Student User", role: "student" as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() },
+    { id: "u1", email: "rootadmin@test.com", full_name: "Root Admin", role: "root_admin" as Role, active: true, tenant_id: tenants[0].id, created_at: new Date().toISOString() },
+    { id: "u2", email: "admin@acme.com", full_name: "Acme Admin", role: "admin" as Role, active: true, tenant_id: tenants[0].id, created_at: new Date().toISOString() },
+    { id: "u3", email: "teacher@acme.com", full_name: "Acme Teacher", role: "teacher" as Role, active: true, tenant_id: tenants[0].id, created_at: new Date().toISOString() },
+    { id: "u4", email: "student@acme.com", full_name: "Acme Student", role: "student" as Role, active: true, tenant_id: tenants[0].id, created_at: new Date().toISOString() },
+    { id: "u5", email: "admin@tech.com", full_name: "Tech Admin", role: "admin" as Role, active: true, tenant_id: tenants[1].id, created_at: new Date().toISOString() },
+    { id: "u6", email: "teacher@tech.com", full_name: "Tech Teacher", role: "teacher" as Role, active: true, tenant_id: tenants[1].id, created_at: new Date().toISOString() },
+    { id: "u7", email: "student@tech.com", full_name: "Tech Student", role: "student" as Role, active: true, tenant_id: tenants[1].id, created_at: new Date().toISOString() },
   ];
 
   const exams: Exam[] = [
@@ -38,7 +48,7 @@ if (ENABLE_MOCKS) {
       passing_score: 60,
       active: true,
       status: "PUBLISHED" as const,
-      tenant_id: tenant.id,
+      tenant_id: tenants[0].id,
       created_by: "u3",
       created_at: new Date().toISOString(),
     },
@@ -83,7 +93,7 @@ if (ENABLE_MOCKS) {
       if (!email || !password || !full_name) return [400, { detail: "Missing fields" }];
       if (users.some((u) => u.email === email)) return [400, { detail: "User already exists" }];
       const id = `u${users.length + 1}`;
-      const newUser = { id, email, full_name, role: (role || "student") as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() };
+      const newUser = { id, email, full_name, role: (role || "student") as Role, active: true, tenant_id: tenants[0].id, created_at: new Date().toISOString() };
       (passwordByEmail as any)[email] = password;
       users.push(newUser);
       const token = `mock-token-${id}`;
@@ -103,13 +113,11 @@ if (ENABLE_MOCKS) {
   });
 
   // TENANTS ----------------------------------------------------
-  const tenants = [tenant];
-
   mock.onGet("/api/tenants/me").reply(() => {
     const user = getCurrentUser();
     if (!user) return [401, { detail: "Unauthorized" }];
     const userTenant = tenants.find((t) => t.id === user.tenant_id);
-    return [200, userTenant || tenant];
+    return [200, userTenant || tenants[0]];
   });
 
   mock.onGet("/api/tenants").reply(() => {
@@ -130,7 +138,6 @@ if (ENABLE_MOCKS) {
         id,
         name,
         slug,
-        plan: "basic",
         active: active !== undefined ? active : true,
         created_at: new Date().toISOString(),
       };
@@ -167,18 +174,62 @@ if (ENABLE_MOCKS) {
   });
 
   // USERS ------------------------------------------------------
-  mock.onGet("/api/users").reply(200, users.map(({ id, email, full_name, role, active, tenant_id, created_at }) => ({ id, email, full_name, role: (role as any) === "root_admin" ? "admin" : role, active, tenant_id, created_at })));
+  mock.onGet("/api/users").reply(() => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return [401, { detail: "Unauthorized" }];
+    
+    let filteredUsers = users;
+    
+    // Root admin sees all users across all tenants
+    if (currentUser.role === "root_admin") {
+      filteredUsers = users;
+    } 
+    // Admin sees only users in their tenant (excluding root_admin)
+    else if (currentUser.role === "admin") {
+      filteredUsers = users.filter(u => 
+        u.tenant_id === currentUser.tenant_id && 
+        u.role !== "root_admin"
+      );
+    } else {
+      return [403, { detail: "Forbidden" }];
+    }
+    
+    return [200, filteredUsers.map(({ id, email, full_name, role, active, tenant_id, created_at }) => 
+      ({ id, email, full_name, role, active, tenant_id, created_at })
+    )];
+  });
 
   mock.onPost("/api/users").reply((config) => {
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) return [401, { detail: "Unauthorized" }];
+      if (currentUser.role !== "root_admin" && currentUser.role !== "admin") {
+        return [403, { detail: "Forbidden" }];
+      }
+      
       const { email, full_name, password, role } = JSON.parse(config.data || "{}");
       if (!email || !password || !role) return [400, { detail: "Missing fields" }];
       if (users.some((u) => u.email === email)) return [400, { detail: "User exists" }];
+      
+      // Only root_admin can create root_admin users
+      if (role === "root_admin" && currentUser.role !== "root_admin") {
+        return [403, { detail: "Only root admin can create root admin users" }];
+      }
+      
       const id = `u${users.length + 1}`;
-      const u = { id, email, full_name: full_name || email.split("@")[0], role: (role || "student") as Role, active: true, tenant_id: tenant.id, created_at: new Date().toISOString() };
+      const tenant_id = currentUser.role === "root_admin" ? tenants[0].id : currentUser.tenant_id;
+      const u = { 
+        id, 
+        email, 
+        full_name: full_name || email.split("@")[0], 
+        role: role as Role, 
+        active: true, 
+        tenant_id, 
+        created_at: new Date().toISOString() 
+      };
       (passwordByEmail as any)[email] = password;
       users.push(u);
-      return [200, { ...u, role: (u.role as any) === "root_admin" ? "admin" : u.role }];
+      return [200, u];
     } catch {
       return [500, { detail: "Create user failed" }];
     }
@@ -230,7 +281,7 @@ if (ENABLE_MOCKS) {
         passing_score: Number(data.passing_score) || 60,
         active: true,
         status: "DRAFT" as const,
-        tenant_id: tenant.id,
+        tenant_id: user.tenant_id,
         created_by: user.id,
         created_at: now,
       };
